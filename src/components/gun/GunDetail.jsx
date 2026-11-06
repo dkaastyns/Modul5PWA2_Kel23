@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { ArrowLeft, Star, Send, Loader } from 'lucide-react'
+import { ArrowLeft, Star, Send, Loader, Share2 } from 'lucide-react'
 import FavoriteButton from '../common/FavoriteButton'
+import Toast from '../common/Toast'
 import { useReviews, useCreateReview } from '../../hooks/useReviews'
 import { getUserIdentifier } from '../../services/userService'
 import { formatPrice, averageRating } from '../../utils/helpers'
+import { shareGun } from '../../utils/share'
 
 /**
  * Full-screen product detail view.
@@ -30,6 +32,17 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete }) {
 
   const avgRating = gun.average_rating || averageRating(reviews)
   const reviewCount = gun.review_count ?? reviews.length
+
+  const [toast, setToast] = useState(null)
+
+  const handleShare = async () => {
+    const res = await shareGun(gun)
+    if (res.message && res.success) {
+      setToast({ message: res.message, type: 'success' })
+    } else if (!res.success && res.message && res.message !== 'Share cancelled') {
+      setToast({ message: res.message, type: 'error' })
+    }
+  }
 
   const handleSubmitReview = async (e) => {
     e.preventDefault()
@@ -66,7 +79,13 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete }) {
 
       {/* Hero */}
       <div className="detail-hero">
-        <img className="detail-img" src={imgSrc} alt={gun.name} />
+        <img
+          className="detail-img"
+          src={imgSrc}
+          alt={gun.name}
+          loading="lazy"
+          decoding="async"
+        />
         <div className="detail-info">
           <h1 className="display">{gun.name}</h1>
           <p className="type">
@@ -83,6 +102,14 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete }) {
           )}
 
           <div className="detail-actions">
+            <button
+              type="button"
+              className="btn btn--outline"
+              onClick={handleShare}
+              title="Bagikan tautan katalog ini"
+            >
+              <Share2 size={16} /> Share
+            </button>
             <FavoriteButton gunId={gun.id || gun.name} />
             {onEdit && (
               <button type="button" className="btn btn--outline" onClick={() => onEdit(gun)}>
@@ -213,6 +240,14 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete }) {
           <p className="detail-empty">No reviews yet. Be the first!</p>
         )}
       </section>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

@@ -397,6 +397,79 @@
   gap: 20px;
 }
 
+/* ---------------------------------------------------------------------------
+ * Pagination
+ * --------------------------------------------------------------------------- */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.pagination__info {
+  font-size: 0.9rem;
+  color: var(--steel);
+}
+
+.pagination__info strong {
+  color: var(--gunmetal);
+}
+
+.pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--gunmetal);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pagination__btn:hover:not(:disabled) {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.pagination__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination__btn--active {
+  background: var(--gunmetal);
+  color: #fff;
+  border-color: var(--gunmetal);
+}
+
+.pagination__btn--active:hover {
+  background: var(--gunmetal);
+  color: #fff;
+}
+
+.pagination__ellipsis {
+  padding: 0 4px;
+  color: var(--steel);
+}
+
 .card {
   position: relative;
   display: flex;
@@ -1449,6 +1522,26 @@
   background: #e8f8f5;
   color: #1e8449;
   border: 1px solid #a3e4d7;
+}
+
+.toast-floating {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  animation: toastFadeIn 0.25s ease-out;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ---------------------------------------------------------------------------

@@ -5,6 +5,8 @@ import GUNS_LOCAL from '../data/guns'
 import GunCard from '../components/gun/GunCard'
 import GunDetail from '../components/gun/GunDetail'
 import AdvancedFilter from '../components/common/AdvancedFilter'
+import Pagination from '../components/common/Pagination'
+import Toast from '../components/common/Toast'
 import ConfirmModal from '../components/modals/ConfirmModal'
 import gunService from '../services/gunService'
 import {
@@ -14,14 +16,16 @@ import {
   extractCategories,
 } from '../utils/helpers'
 
+const ITEMS_PER_PAGE = 6
+
 /**
  * Catalog page — the main product listing.
  *
  * Data source priority:
- *   1. Live API via useGuns()
+ *   1. Live API via useGuns() (with query caching)
  *   2. Local static array (GUNS_LOCAL) when the API is unreachable
  *
- * Features: search, category filter, sort, CRUD actions, detail modal.
+ * Features: search, category filter, sort, pagination, CRUD actions, share, detail view.
  */
 export default function Catalog({ onNavigate }) {
   // ---- API data ----
@@ -43,6 +47,17 @@ export default function Catalog({ onNavigate }) {
   const [sortKey, setSortKey] = useState('name')
   const [sortOrder, setSortOrder] = useState('asc')
 
+  // ---- pagination ----
+  const [currentPage, setCurrentPage] = useState(1)
+  const [prevFilterKey, setPrevFilterKey] = useState('')
+
+  // Reset to page 1 whenever search, category filter, or sort changes
+  const filterKey = `${search}-${activeCategory}-${sortKey}-${sortOrder}`
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey)
+    setCurrentPage(1)
+  }
+
   const categories = useMemo(() => extractCategories(rawGuns), [rawGuns])
 
   const filteredGuns = useMemo(() => {
@@ -52,6 +67,13 @@ export default function Catalog({ onNavigate }) {
     return sortItems(result, sortKey, sortOrder)
   }, [rawGuns, search, activeCategory, sortKey, sortOrder])
 
+  // Paginated slice for current page
+  const totalPages = Math.ceil(filteredGuns.length / ITEMS_PER_PAGE) || 1
+  const paginatedGuns = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredGuns.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredGuns, currentPage])
+
   // ---- detail view ----
   const [selectedGun, setSelectedGun] = useState(null)
 
@@ -59,6 +81,17 @@ export default function Catalog({ onNavigate }) {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+
+  // ---- toast notification (e.g. for card share feedback) ----
+  const [toast, setToast] = useState(null)
+
+  const handleCardShare = (result) => {
+    if (result.message && result.success) {
+      setToast({ message: result.message, type: 'success' })
+    } else if (!result.success && result.message && result.message !== 'Share cancelled') {
+      setToast({ message: result.message, type: 'error' })
+    }
+  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -163,19 +196,37 @@ export default function Catalog({ onNavigate }) {
           </div>
         )}
 
-        {/* Product grid */}
-        {filteredGuns.length > 0 && (
-          <ul className="stock">
-            {filteredGuns.map((gun) => (
-              <GunCard
-                key={gun.id || gun.name}
-                gun={gun}
-                onSelect={setSelectedGun}
-                onEdit={onNavigate ? (g) => onNavigate('Edit', g) : undefined}
-                onDelete={setDeleteTarget}
-              />
-            ))}
-          </ul>
+        {/* Product grid with paginated items */}
+        {paginatedGuns.length > 0 && (
+          <>
+            <ul className="stock">
+              {paginatedGuns.map((gun) => (
+                <GunCard
+                  key={gun.id || gun.name}
+                  gun={gun}
+                  onSelect={setSelectedGun}
+                  onEdit={onNavigate ? (g) => onNavigate('Edit', g) : undefined}
+                  onDelete={setDeleteTarget}
+                  onShare={handleCardShare}
+                />
+              ))}
+            </ul>
+
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredGuns.length}
+              pageSize={ITEMS_PER_PAGE}
+              onPageChange={(page) => {
+                setCurrentPage(page)
+                const listEl = document.querySelector('.list-head')
+                if (listEl) {
+                  listEl.scrollIntoView({ behavior: 'smooth' })
+                }
+              }}
+            />
+          </>
         )}
 
         {useLocal && (
@@ -205,6 +256,15 @@ export default function Catalog({ onNavigate }) {
       />
       {deleteError && (
         <div className="toast toast--error">{deleteError}</div>
+      )}
+
+      {/* Toast Feedback */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </>
   )

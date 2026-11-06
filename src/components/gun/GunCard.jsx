@@ -1,5 +1,7 @@
+import { Share2 } from 'lucide-react'
 import FavoriteButton from '../common/FavoriteButton'
 import { formatPrice, truncate } from '../../utils/helpers'
+import { shareGun } from '../../utils/share'
 
 /**
  * Product card used in the catalog grid.
@@ -9,12 +11,21 @@ import { formatPrice, truncate } from '../../utils/helpers'
  * @param {Function} props.onSelect  — called with the gun when clicked
  * @param {Function} [props.onEdit]  — called when Edit is clicked (admin)
  * @param {Function} [props.onDelete]— called when Delete is clicked (admin)
+ * @param {Function} [props.onShare] — called after sharing with share result
  */
-export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
+export default function GunCard({ gun, onSelect, onEdit, onDelete, onShare }) {
   const imgSrc = gun.image_url || gun.image || '/guns/pistol.svg'
   const category = gun.type || gun.category || '—'
   const caliber = gun.caliber || gun.difficulty || ''
   const price = gun.price ?? gun.cook_time ?? 0
+
+  const handleShare = async (e) => {
+    e.stopPropagation()
+    const result = await shareGun(gun)
+    if (onShare) {
+      onShare(result)
+    }
+  }
 
   return (
     <li className="card">
@@ -31,6 +42,7 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
           width="240"
           height="180"
           loading="lazy"
+          decoding="async"
         />
 
         <span className="name display">{gun.name}</span>
@@ -49,6 +61,16 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
 
       {/* Floating actions row */}
       <div className="card-actions">
+        <button
+          type="button"
+          className="card-act-btn"
+          onClick={handleShare}
+          aria-label={`Share ${gun.name}`}
+          title="Share link"
+        >
+          <Share2 size={16} />
+        </button>
+
         <FavoriteButton gunId={gun.id || gun.name} />
 
         {onEdit && (
